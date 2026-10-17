@@ -13,5 +13,5 @@
     <?php endif; ?>
   </div>
 <?php endforeach; ?>
-<div class="card"><?= view($t['view_file'], ['fields' => $fields, 'content' => $content]) ?></div>
+<div class="card"><?= view($t['view_file'], ['fields' => $fields, 'content' => $content, 'design' => design_of($t)]) ?></div>
 <?= $this->endSection() ?>

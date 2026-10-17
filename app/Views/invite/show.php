@@ -20,7 +20,7 @@ button{background:#8a2850;color:#fff;border:0;border-radius:6px}.hp{position:abs
 <?php if ($video): ?>
   <div style="text-align:center;padding:16px"><video controls playsinline preload="metadata" style="width:100%;max-width:420px;border-radius:10px" src="<?= esc($video, 'attr') ?>"></video></div>
 <?php else: ?>
-  <?= view($inv['view_file'], ['fields' => $fields, 'content' => $content]) ?>
+  <?= view($inv['view_file'], ['fields' => $fields, 'content' => $content, 'design' => design_of($inv)]) ?>
 <?php endif; ?>
 <form class="rsvp" method="post" action="/i/<?= esc($inv['short_code'], 'attr') ?>/rsvp">
   <?= csrf_field() ?>

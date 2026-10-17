@@ -17,7 +17,8 @@
       <?php if ($i['format'] === 'video'): ?><br>
         <?php if ($i['video_file']): ?><a href="<?= esc(base_url($i['video_file']), 'attr') ?>" download><?= lang('Site.downloadVideo') ?></a>
         <?php elseif ($i['video_status'] === 'failed'): ?><?= lang('Site.videoFailed') ?>
-        <?php else: ?><?= lang('Site.videoPreparing') ?><?php endif; ?>
+        <?php elseif ($i['video_status']): ?><?= lang('Site.videoPreparing') ?>
+        <?php else: ?><a href="/dashboard/invites/<?= (int) $i['id'] ?>/video"><?= lang('Site.createVideo') ?></a><?php endif; ?>
       <?php endif; ?>
       <br><a href="/dashboard/invites/<?= (int) $i['id'] ?>/rsvps"><?= lang('Site.rsvp') ?> (<?= (int) $i['rsvp_count'] ?>)</a>
     <?php endif; ?>

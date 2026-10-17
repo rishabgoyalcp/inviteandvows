@@ -86,3 +86,11 @@ function canonical_url(): string
 {
     return rtrim(site_url(implode('/', service('request')->getUri()->getSegments())), '/') ?: site_url('/');
 }
+
+/** The designer's JSON from a template row (needs its `config` column), or null when the template has no design. */
+function design_of(array $template): ?array
+{
+    $cfg = json_decode((string) ($template['config'] ?? $template['template_config'] ?? ''), true);
+
+    return ! empty($cfg['design']['frames']) ? $cfg['design'] : null;
+}

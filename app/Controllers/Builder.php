@@ -79,7 +79,7 @@ class Builder extends BaseController
         $tpl     = db_connect()->table('templates')->where('id', $inv['template_id'])->get()->getRowArray();
 
         return $this->response->setBody('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0">'
-            . view($tpl['view_file'], ['fields' => $fields, 'content' => $content]));
+            . view($tpl['view_file'], ['fields' => $fields, 'content' => $content, 'design' => design_of($tpl)]));
     }
 
     public function upload(string $token)

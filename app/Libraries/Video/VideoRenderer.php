@@ -2,6 +2,7 @@
 
 namespace App\Libraries\Video;
 
+use App\Libraries\Design\DesignRenderer;
 use App\Libraries\InviteService;
 
 /**
@@ -11,45 +12,49 @@ use App\Libraries\InviteService;
  */
 class VideoRenderer
 {
-    private int $width;
-    private int $height;
-    private float $seconds = 3.5;
-    private float $fade    = 0.6;
-
-    public function __construct()
-    {
-        [$w, $h]      = array_map('intval', explode('x', (string) env('video.size', '1080x1920')) + [1 => 1920]);
-        $this->width  = max(320, $w);
-        $this->height = max(320, $h);
-    }
+    private float $fade = 0.6;
 
     /** @return string path relative to public/, e.g. videos/ab12.mp4 */
     public function render(int $inviteId): string
     {
         $db  = db_connect();
-        $inv = $db->table('invites i')->select('i.*, t.config AS template_config')->join('templates t', 't.id = i.template_id')->where('i.id', $inviteId)->get()->getRowArray();
+        $inv = $db->table('invites i')->select('i.*, t.config')->join('templates t', 't.id = i.template_id')->where('i.id', $inviteId)->get()->getRowArray();
         if (! $inv) {
             throw new \RuntimeException("Invite {$inviteId} not found");
         }
         $fields  = InviteService::fieldsFor((int) $inv['template_id']);
         $content = json_decode($inv['content'] ?? '{}', true) ?: [];
-        $locale  = $inv['locale'] ?: 'en';
-        $lang    = $db->table('languages')->where('code', $locale)->get()->getRowArray() ?: [];
+        $lang    = $db->table('languages')->where('code', $inv['locale'] ?: 'en')->get()->getRowArray() ?: [];
+        $design  = VideoScenes::design($inv, $fields, $content, (int) $inv['id']);
+        if (! $design['frames']) {
+            throw new \RuntimeException('Invite has no content to render');
+        }
+        $W = (int) $design['canvas']['w'];
+        $H = (int) $design['canvas']['h'];
 
         $work = sys_get_temp_dir() . '/vid_' . bin2hex(random_bytes(6));
         mkdir($work, 0700, true);
         try {
-            $scenes = $this->scenes($fields, $content, json_decode($inv['template_config'] ?? '{}', true) ?: [], $locale);
-            if (! $scenes) {
-                throw new \RuntimeException('Invite has no content to render');
-            }
-            $bg = $this->coverImage($fields, $content, (int) $inv['id'], $work);
-            foreach ($scenes as $i => $scene) {
-                file_put_contents("{$work}/s{$i}.html", $this->sceneHtml($scene, $lang, $i === 0 ? $bg : null));
+            // Images are copied next to the page so Chromium can read them without any wider file access.
+            $copies = [];
+            $img    = function (string $path) use ($work, &$copies): string {
+                if (! isset($copies[$path])) {
+                    $name = 'img' . count($copies) . '.' . strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                    if (is_file(FCPATH . $path)) {
+                        copy(FCPATH . $path, "{$work}/{$name}");
+                    }
+                    $copies[$path] = $name;
+                }
+
+                return $copies[$path];
+            };
+            foreach ($design['frames'] as $i => $frame) {
+                file_put_contents("{$work}/s{$i}.html", DesignRenderer::pageHtml($design, $frame, $fields, $content, $lang, $img));
                 $this->run([
                     env('video.chromiumBin', 'chromium'), '--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run',
                     ...array_filter(explode(' ', (string) env('video.chromiumFlags', '--no-sandbox'))),
-                    '--virtual-time-budget=5000', "--window-size={$this->width},{$this->height}",
+                    '--virtual-time-budget=5000', "--window-size={$W}," . ($H + 300), // headless Chromium loses part of the height to its window frame; ffmpeg crops the extra
+
                     "--screenshot={$work}/s{$i}.png", "file://{$work}/s{$i}.html",
                 ], 90);
                 if (! is_file("{$work}/s{$i}.png")) {
@@ -57,7 +62,7 @@ class VideoRenderer
                 }
             }
             $out = 'videos/' . bin2hex(random_bytes(12)) . '.mp4';
-            $this->run($this->ffmpegCommand(count($scenes), $work, FCPATH . $out), 300);
+            $this->run($this->ffmpegCommand(array_column($design['frames'], 'seconds'), $work, FCPATH . $out, $W, $H), 300);
             if (! is_file(FCPATH . $out) || filesize(FCPATH . $out) < 1000) {
                 throw new \RuntimeException('ffmpeg produced no output');
             }
@@ -71,95 +76,27 @@ class VideoRenderer
         }
     }
 
-    /**
-     * Scenes come from the template's config {"video":{"scenes":[{"fields":["a","b"],"bg":"#123456"}]}}
-     * or, when absent, are built automatically: two values per scene, in field order.
-     */
-    private function scenes(array $fields, array $content, array $config, string $locale): array
-    {
-        $byKey = [];
-        foreach ($fields as $f) {
-            $byKey[$f['field_key']] = $f;
-        }
-        $line = function (string $key) use ($byKey, $content): ?string {
-            $f = $byKey[$key] ?? null;
-            $v = trim((string) ($content[$key] ?? ''));
-            if (! $f || $v === '' || in_array($f['field_type'], ['image', 'url'], true)) {
-                return null;
-            }
-            if ($f['field_type'] === 'date') {
-                return date('j F Y', strtotime($v));
-            }
-
-            return mb_strlen($v) > 140 ? mb_substr($v, 0, 137) . '…' : $v;
-        };
-
-        $scenes = [];
-        foreach ($config['video']['scenes'] ?? [] as $s) {
-            $lines = array_values(array_filter(array_map($line, (array) ($s['fields'] ?? []))));
-            if ($lines) {
-                $scenes[] = ['lines' => $lines, 'bg' => preg_match('/^#[0-9a-fA-F]{6}$/', (string) ($s['bg'] ?? '')) ? $s['bg'] : null];
-            }
-        }
-        if (! $scenes) {
-            $all = array_values(array_filter(array_map($line, array_keys($byKey))));
-            foreach (array_chunk($all, 2) as $chunk) {
-                $scenes[] = ['lines' => $chunk, 'bg' => null];
-            }
-        }
-
-        return array_slice($scenes, 0, 6);
-    }
-
-    /** Copies the cover photo into the work folder so Chromium reads it next to the page. Only the invite's own uploads are allowed. */
-    private function coverImage(array $fields, array $content, int $inviteId, string $work): ?string
-    {
-        foreach ($fields as $f) {
-            $p = (string) ($content[$f['field_key']] ?? '');
-            if ($f['field_type'] === 'image' && preg_match('#^uploads/invites/' . $inviteId . '/[A-Za-z0-9_.-]+$#', $p) && is_file(FCPATH . $p)) {
-                $ext = strtolower(pathinfo($p, PATHINFO_EXTENSION));
-                copy(FCPATH . $p, "{$work}/cover.{$ext}");
-
-                return "cover.{$ext}";
-            }
-        }
-
-        return null;
-    }
-
-    private function sceneHtml(array $scene, array $lang, ?string $bgImage): string
-    {
-        $font  = $lang['font_family'] ?? 'Noto Sans';
-        $rtl   = ! empty($lang['is_rtl']);
-        $bg    = $scene['bg'] ?? '#fffaf2';
-        $color = $bgImage ? '#ffffff' : '#3b2a2a';
-        $css   = $bgImage ? "background:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('" . $bgImage . "') center/cover" : "background:{$bg}";
-        $link  = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=' . str_replace(' ', '+', $font) . ':wght@400;600&display=swap">';
-        $html  = '<!doctype html><html dir="' . ($rtl ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8">' . $link
-            . '<style>html,body{margin:0;width:100%;height:100%}body{' . $css . ';color:' . $color . ';font-family:"' . htmlspecialchars($font, ENT_QUOTES) . '",sans-serif;'
-            . 'display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 8%;box-sizing:border-box}'
-            . 'p{font-size:' . (int) ($this->width / 11) . 'px;line-height:1.35;margin:.4em 0;white-space:pre-line}p:first-child{font-size:' . (int) ($this->width / 8) . 'px;font-weight:600}</style></head><body>';
-        foreach ($scene['lines'] as $l) {
-            $html .= '<p>' . htmlspecialchars($l, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
-        }
-
-        return $html . '</body></html>';
-    }
-
-    private function ffmpegCommand(int $n, string $work, string $out): array
+    /** @param list<float|int> $seconds length of each scene */
+    private function ffmpegCommand(array $seconds, string $work, string $out, int $W, int $H): array
     {
         $cmd = [env('video.ffmpegBin', 'ffmpeg'), '-y', '-loglevel', 'error'];
-        for ($i = 0; $i < $n; $i++) {
-            array_push($cmd, '-loop', '1', '-t', (string) $this->seconds, '-i', "{$work}/s{$i}.png");
+        foreach ($seconds as $i => $d) {
+            array_push($cmd, '-loop', '1', '-t', (string) $d, '-i', "{$work}/s{$i}.png");
         }
         $filter = '';
-        $last   = '0:v';
-        for ($i = 1; $i < $n; $i++) {
-            $offset  = round($i * ($this->seconds - $this->fade), 2);
-            $filter .= "[{$last}][{$i}:v]xfade=transition=fade:duration={$this->fade}:offset={$offset}[v{$i}];";
+        foreach (array_keys($seconds) as $i) {
+            $filter .= "[{$i}:v]crop={$W}:{$H}:0:0,setsar=1[c{$i}];";
+        }
+        $last = 'c0';
+        $sum  = 0.0;
+        for ($i = 1; $i < count($seconds); $i++) {
+            $sum    += $seconds[$i - 1];
+            $offset  = round($sum - $i * $this->fade, 2);
+            $filter .= "[{$last}][c{$i}]xfade=transition=fade:duration={$this->fade}:offset={$offset}[v{$i}];";
             $last    = "v{$i}";
         }
-        $filter .= "[{$last}]format=yuv420p[out]";
+        // Even dimensions are required by H.264.
+        $filter .= "[{$last}]scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p[out]";
         array_push($cmd, '-filter_complex', $filter, '-map', '[out]', '-r', '30', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-movflags', '+faststart', $out);
 
         return $cmd;

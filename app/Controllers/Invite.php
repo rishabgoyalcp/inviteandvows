@@ -9,7 +9,7 @@ class Invite extends BaseController
 {
     private function published(string $code): array
     {
-        $inv = db_connect()->table('invites i')->select('i.*, t.view_file, t.names AS template_names')->join('templates t', 't.id = i.template_id')
+        $inv = db_connect()->table('invites i')->select('i.*, t.view_file, t.config AS template_config, t.names AS template_names')->join('templates t', 't.id = i.template_id')
             ->where('i.short_code', $code)->where('i.status', 'published')->get()->getRowArray();
         if (! $inv || ($inv['expires_at'] && strtotime($inv['expires_at']) < time())) {
             throw PageNotFoundException::forPageNotFound();

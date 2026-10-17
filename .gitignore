@@ -135,3 +135,7 @@ public/uploads/*
 # Rendered video invites
 public/videos/*
 !public/videos/.gitkeep
+
+# Designer uploads
+public/uploads/templates/*
+!public/uploads/templates/.gitkeep

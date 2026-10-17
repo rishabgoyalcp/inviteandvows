@@ -9,7 +9,7 @@ foreach (array_merge($rows, [['id' => 0, 'slug' => '', 'names' => '{}', 'view_fi
     $n = json_decode($r['names'] ?? '{}', true) ?: []; ?>
   <form method="post" action="/admin/templates" class="card">
     <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int) $r['id'] ?>">
-    <?php if ($r['id']): ?><strong><?= esc($r['slug']) ?></strong> (<?= esc($r['event_slug']) ?>)<br>
+    <?php if ($r['id']): ?><strong><?= esc($r['slug']) ?></strong> (<?= esc($r['event_slug']) ?>) · <a href="/admin/templates/<?= (int) $r['id'] ?>/design">Design in browser</a><br>
     <?php else: ?><strong>New</strong> <input name="slug" placeholder="slug">
       <select name="event_type_id"><?php foreach ($eventTypes as $e): ?><option value="<?= (int) $e['id'] ?>"><?= esc($e['slug']) ?></option><?php endforeach; ?></select><br><?php endif; ?>
     <?php foreach ($langs as $l): ?><input name="names[<?= esc($l['code'], 'attr') ?>]" value="<?= esc($n[$l['code']] ?? '', 'attr') ?>" placeholder="<?= esc($l['name'], 'attr') ?>"><?php endforeach; ?>

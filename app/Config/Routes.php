@@ -52,6 +52,9 @@ $routes->group('dashboard', ['filter' => 'login'], static function ($routes) {
     $routes->get('/', 'Dashboard::index');
     $routes->get('invites/(:num)/rsvps', 'Dashboard::rsvps/$1');
     $routes->get('orders/(:num)/open', 'Dashboard::openOrder/$1');
+    $routes->get('invites/(:num)/video', 'Dashboard::makeVideo/$1');
+    $routes->get('invites/(:num)/video-data', 'Dashboard::videoData/$1');
+    $routes->post('invites/(:num)/video', 'Dashboard::uploadVideo/$1');
 });
 
 $routes->group('admin', ['filter' => 'adminauth', 'namespace' => 'App\Controllers\Admin'], static function ($routes) {
@@ -63,6 +66,9 @@ $routes->group('admin', ['filter' => 'adminauth', 'namespace' => 'App\Controller
     $routes->post('event-types/(:num)/fields/(:num)/delete', 'Catalog::deleteField/$1/$2');
     $routes->get('languages', 'Catalog::languages');
     $routes->post('languages', 'Catalog::saveLanguages');
+    $routes->get('templates/(:num)/design', 'Designer::edit/$1');
+    $routes->post('templates/(:num)/design', 'Designer::save/$1');
+    $routes->post('templates/(:num)/design/upload', 'Designer::upload/$1');
     $routes->get('templates', 'Catalog::templates');
     $routes->post('templates', 'Catalog::saveTemplate');
 });
