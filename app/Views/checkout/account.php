@@ -3,7 +3,7 @@
 <h1><?= lang('Site.createAccount') ?></h1>
 <p><?= lang('Site.accountNote') ?></p>
 <?php if ($error): ?><p class="err"><?= esc($error) ?></p><?php endif; ?>
-<form method="post" action="/checkout/<?= esc($token, 'attr') ?>/account" class="card">
+<form method="post" action="<?= esc($action, 'attr') ?>" class="card">
   <?= csrf_field() ?>
   <div><input name="name" placeholder="<?= lang('Site.name') ?>"></div>
   <div><input type="email" name="email" placeholder="<?= lang('Site.email') ?>" required></div>

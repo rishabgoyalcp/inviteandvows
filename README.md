@@ -29,5 +29,6 @@ Admin login: `/login`, then `/admin`. Domains map to markets through the `region
 
 - Phase 0 (foundation): done.
 - Phase 1 (website invites): built. Template gallery, live builder with photo upload, account at checkout, Razorpay checkout and webhook (`/webhooks/razorpay`), public invite page at `/i/{code}` and `wd2.in/{code}`, RSVP, customer dashboard with CSV export, admin screens for event types, fields, templates and prices.
+- Phase 2 (Canva products): admin sets a price and a Canva share link per region for `canva_design` and `canva_pdf` (only canva.com / canva.link links are accepted). Buyers pay at `/buy/{id}`; the link is only reachable by the paying customer through `/dashboard`. Order emails are sent through SMTP (see `.env.example`); a failed email is logged and never blocks the order.
 - Without Razorpay keys, a developer-only fake payment button appears (development environment only).
 - Razorpay payment was not tested against the real gateway yet; add test keys to `.env` and try a test payment.

@@ -25,6 +25,15 @@ $routes->post('checkout/(:alphanum)/verify', 'Checkout::verify/$1');
 $routes->post('checkout/(:alphanum)/simulate', 'Checkout::simulate/$1');
 $routes->post('webhooks/razorpay', 'Webhooks::razorpay');
 
+// Ready-made Canva products
+$routes->get('buy/(:num)', 'Buy::show/$1');
+$routes->post('buy/(:num)/account', 'Buy::account/$1');
+$routes->group('', ['filter' => 'login'], static function ($routes) {
+    $routes->post('buy/(:num)', 'Buy::start/$1');
+    $routes->post('buy/order/(:num)/verify', 'Buy::verify/$1');
+    $routes->post('buy/order/(:num)/simulate', 'Buy::simulate/$1');
+});
+
 // Published invites
 $routes->get('i/(:alphanum)', 'Invite::show/$1');
 $routes->post('i/(:alphanum)/rsvp', 'Invite::rsvp/$1');
@@ -33,6 +42,7 @@ $routes->post('i/(:alphanum)/rsvp', 'Invite::rsvp/$1');
 $routes->group('dashboard', ['filter' => 'login'], static function ($routes) {
     $routes->get('/', 'Dashboard::index');
     $routes->get('invites/(:num)/rsvps', 'Dashboard::rsvps/$1');
+    $routes->get('orders/(:num)/open', 'Dashboard::openOrder/$1');
 });
 
 $routes->group('admin', ['filter' => 'adminauth', 'namespace' => 'App\Controllers\Admin'], static function ($routes) {

@@ -10,14 +10,16 @@ class InviteService
         $db = db_connect();
         $db->transStart();
 
-        $order = $db->table('orders')->where('id', $orderId)->get()->getRowArray();
+        $newlyPaid = false;
+        $order     = $db->table('orders')->where('id', $orderId)->get()->getRowArray();
         if ($order && $order['status'] !== 'paid') {
+            $newlyPaid = true;
             $now = date('Y-m-d H:i:s');
             $db->table('orders')->where('id', $orderId)->update(['status' => 'paid', 'updated_at' => $now]);
             $db->table('payments')->where('order_id', $orderId)->where('provider_ref', $providerRef)
                 ->update(['status' => 'captured', 'raw' => json_encode(['payment_id' => $paymentId]), 'updated_at' => $now]);
 
-            $invite = $db->table('invites')->where('id', $order['invite_id'])->get()->getRowArray();
+            $invite = $order['invite_id'] ? $db->table('invites')->where('id', $order['invite_id'])->get()->getRowArray() : null;
             if ($invite && empty($invite['short_code'])) {
                 do {
                     $code = random_code(7);
@@ -26,6 +28,10 @@ class InviteService
             }
         }
         $db->transComplete();
+
+        if ($newlyPaid && $db->transStatus()) {
+            OrderMailer::paid($orderId);
+        }
     }
 
     /** Field definitions for a template's event type, in display order. */

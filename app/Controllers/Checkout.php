@@ -57,7 +57,7 @@ class Checkout extends BaseController
             return redirect()->to('/build/' . $token)->with('error', lang('Site.fillRequired') . ' ' . implode(', ', $missing));
         }
         if (! session()->get('user_id')) {
-            return view('checkout/account', ['token' => $token, 'error' => session()->getFlashdata('error')]);
+            return view('checkout/account', ['action' => '/checkout/' . $token . '/account', 'error' => session()->getFlashdata('error')]);
         }
         $region = Region::current();
         $tf     = $this->format($inv);
@@ -83,7 +83,7 @@ class Checkout extends BaseController
             $ref = 'sim_' . bin2hex(random_bytes(6));
             $db->table('payments')->insert($pay + ['provider_ref' => $ref]);
 
-            return view('checkout/simulate', ['token' => $token, 'orderId' => $orderId, 'ref' => $ref, 'amount' => money((int) $tf['price_minor'], $region['currency'])]);
+            return view('checkout/simulate', ['action' => '/checkout/' . $token . '/simulate', 'ref' => $ref, 'amount' => money((int) $tf['price_minor'], $region['currency'])]);
         }
 
         try {
@@ -97,37 +97,16 @@ class Checkout extends BaseController
         $db->table('payments')->insert($pay + ['provider_ref' => $data['provider_ref']]);
         $user = $db->table('users')->where('id', session()->get('user_id'))->get()->getRowArray();
 
-        return view('checkout/razorpay', ['token' => $token, 'data' => $data, 'user' => $user, 'amount' => money((int) $tf['price_minor'], $region['currency'])]);
+        return view('checkout/razorpay', ['action' => '/checkout/' . $token . '/verify', 'data' => $data, 'user' => $user, 'amount' => money((int) $tf['price_minor'], $region['currency'])]);
     }
 
     /** Sign in or create a customer account at checkout. */
     public function account(string $token)
     {
         $this->owned($token);
-        $email = strtolower(trim((string) $this->request->getPost('email')));
-        $pass  = (string) $this->request->getPost('password');
-        $name  = trim((string) $this->request->getPost('name'));
-        $back  = redirect()->to('/checkout/' . $token);
+        $err = \App\Libraries\Accounts::loginOrCreate((string) $this->request->getPost('email'), (string) $this->request->getPost('password'), trim((string) $this->request->getPost('name')));
 
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($pass) < 8) {
-            return $back->with('error', lang('Site.badAccount'));
-        }
-        $db   = db_connect();
-        $user = $db->table('users')->where('email', $email)->get()->getRowArray();
-        if ($user) {
-            if (! $user['password_hash'] || ! password_verify($pass, $user['password_hash'])) {
-                return $back->with('error', lang('Site.invalidLogin'));
-            }
-        } else {
-            $now = date('Y-m-d H:i:s');
-            $db->table('users')->insert(['name' => mb_substr($name ?: $email, 0, 120), 'email' => $email, 'password_hash' => password_hash($pass, PASSWORD_DEFAULT), 'role' => 'customer', 'is_active' => 1, 'created_at' => $now, 'updated_at' => $now]);
-            $user = $db->table('users')->where('id', $db->insertID())->get()->getRowArray();
-        }
-        $drafts = (array) session()->get('drafts');
-        session()->regenerate();
-        session()->set(['user_id' => (int) $user['id'], 'user_role' => $user['role'], 'user_name' => $user['name'], 'drafts' => $drafts]);
-
-        return $back;
+        return $err ? redirect()->to('/checkout/' . $token)->with('error', lang($err)) : redirect()->to('/checkout/' . $token);
     }
 
     /** Browser return from Razorpay checkout. The webhook does the same job, whichever arrives first wins. */

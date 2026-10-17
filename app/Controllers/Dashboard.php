@@ -12,7 +12,27 @@ class Dashboard extends BaseController
             ->select('i.*, t.names AS template_names, (SELECT COUNT(*) FROM rsvps r WHERE r.invite_id = i.id) AS rsvp_count')
             ->join('templates t', 't.id = i.template_id')->where('i.user_id', session()->get('user_id'))->orderBy('i.id', 'DESC')->get()->getResultArray();
 
-        return view('dashboard/index', ['invites' => $invites, 'ok' => session()->getFlashdata('ok')]);
+        $purchases = db_connect()->table('orders o')->select('o.id, o.amount_minor, o.currency, o.created_at, tf.format, t.names AS template_names')
+            ->join('template_formats tf', 'tf.id = o.template_format_id')->join('templates t', 't.id = tf.template_id')
+            ->where('o.user_id', session()->get('user_id'))->where('o.status', 'paid')->whereIn('tf.format', ['canva_design', 'canva_pdf'])
+            ->orderBy('o.id', 'DESC')->get()->getResultArray();
+
+        return view('dashboard/index', ['invites' => $invites, 'purchases' => $purchases, 'ok' => session()->getFlashdata('ok')]);
+    }
+
+    /** Sends a paying customer to their Canva template. The link is never shown before payment. */
+    public function openOrder(int $id)
+    {
+        $db = db_connect();
+        $o  = $db->table('orders o')->select('o.id, tf.delivery_url')->join('template_formats tf', 'tf.id = o.template_format_id')
+            ->where('o.id', $id)->where('o.user_id', session()->get('user_id'))->where('o.status', 'paid')
+            ->whereIn('tf.format', ['canva_design', 'canva_pdf'])->get()->getRowArray();
+        if (! $o || ! preg_match('#^https://(www\.canva\.com|canva\.link)/#', (string) $o['delivery_url'])) {
+            throw PageNotFoundException::forPageNotFound();
+        }
+        $db->table('orders')->where('id', $id)->set('access_count', 'access_count + 1', false)->update();
+
+        return redirect()->to($o['delivery_url']);
     }
 
     public function rsvps(int $id)

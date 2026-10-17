@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 <?= $this->section('content') ?>
 <h1><?= lang('Site.payNow') ?>: <?= esc($amount) ?></h1>
-<form id="vf" method="post" action="/checkout/<?= esc($token, 'attr') ?>/verify">
+<form id="vf" method="post" action="<?= esc($action, 'attr') ?>">
   <?= csrf_field() ?>
   <input type="hidden" name="razorpay_order_id"><input type="hidden" name="razorpay_payment_id"><input type="hidden" name="razorpay_signature">
 </form>

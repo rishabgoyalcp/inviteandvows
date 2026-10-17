@@ -9,6 +9,7 @@ use CodeIgniter\Exceptions\PageNotFoundException;
 class Catalog extends BaseController
 {
     private const FIELD_TYPES = ['text', 'textarea', 'date', 'time', 'url', 'image'];
+    private const FORMATS     = ['website', 'canva_design', 'canva_pdf'];
 
     private function langs(): array
     {
@@ -102,7 +103,8 @@ class Catalog extends BaseController
             'eventTypes' => $db->table('event_types')->orderBy('sort')->get()->getResultArray(),
             'langs'      => $this->langs(),
             'regions'    => $db->table('regions')->get()->getResultArray(),
-            'prices'     => $db->table('template_formats')->where('format', 'website')->get()->getResultArray(),
+            'prices'     => $db->table('template_formats')->where('is_active', 1)->get()->getResultArray(),
+            'formats'    => self::FORMATS,
             'views'      => $this->templateViews(),
         ]);
     }
@@ -142,17 +144,27 @@ class Catalog extends BaseController
             $db->table('templates')->insert($data + ['slug' => $slug, 'event_type_id' => $et, 'created_at' => $now]);
             $id = (int) $db->insertID();
         }
-        // Website price per region, entered in major units (rupees / dollars).
-        foreach ((array) $this->request->getPost('price') as $regionId => $amount) {
-            if (! is_numeric($amount)) {
-                continue;
-            }
-            $where = ['template_id' => $id, 'region_id' => (int) $regionId, 'format' => 'website'];
-            $minor = (int) round(((float) $amount) * 100);
-            if ($db->table('template_formats')->where($where)->countAllResults() > 0) {
-                $db->table('template_formats')->where($where)->update(['price_minor' => $minor, 'updated_at' => $now]);
-            } else {
-                $db->table('template_formats')->insert($where + ['price_minor' => $minor, 'is_active' => 1, 'created_at' => $now]);
+        // Price per region and format, in major units (rupees / dollars). Blank price switches the format off.
+        // Canva formats also need a Canva share link, which is the product the buyer receives.
+        $prices = (array) $this->request->getPost('price');
+        $urls   = (array) $this->request->getPost('url');
+        foreach ($prices as $regionId => $byFormat) {
+            foreach (self::FORMATS as $format) {
+                $amount = $byFormat[$format] ?? '';
+                $url    = trim((string) ($urls[$regionId][$format] ?? ''));
+                $isCanva = $format !== 'website';
+                $valid  = is_numeric($amount) && (! $isCanva || preg_match('#^https://(www\.canva\.com|canva\.link)/#', $url));
+                $where  = ['template_id' => $id, 'region_id' => (int) $regionId, 'format' => $format];
+                $exists = $db->table('template_formats')->where($where)->countAllResults() > 0;
+                $row    = ['is_active' => $valid ? 1 : 0, 'updated_at' => $now];
+                if ($valid) {
+                    $row += ['price_minor' => (int) round(((float) $amount) * 100), 'delivery_url' => $isCanva ? $url : null];
+                }
+                if ($exists) {
+                    $db->table('template_formats')->where($where)->update($row);
+                } elseif ($valid) {
+                    $db->table('template_formats')->insert($where + $row + ['created_at' => $now]);
+                }
             }
         }
 

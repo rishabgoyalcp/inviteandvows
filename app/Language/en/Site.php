@@ -41,4 +41,13 @@ return [
     'send' => 'Send',
     'myInvites' => 'My invites',
     'edit' => 'Edit',
+    'fmt_website' => 'Website invite',
+    'fmt_canva_design' => 'Editable Canva design',
+    'fmt_canva_pdf' => 'Editable Canva PDF',
+    'buy' => 'Buy now',
+    'alreadyOwned' => 'You already own this. Open it below.',
+    'purchased' => 'Thank you! Your purchase is ready below.',
+    'canvaNote' => 'After payment you get a link to edit this design in Canva. You need a free Canva account.',
+    'myPurchases' => 'My purchases',
+    'openCanva' => 'Open in Canva',
 ];

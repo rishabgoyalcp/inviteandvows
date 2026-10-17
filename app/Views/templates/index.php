@@ -8,7 +8,7 @@
 <?php foreach ($templates as $t): ?>
   <div class="card">
     <strong><?= esc(i18n($t['names'], $t['slug'])) ?></strong> · <?= esc(i18n($t['event_names'], $t['event_slug'])) ?>
-    · <?= esc(money((int) $t['price_minor'], $region['currency'])) ?>
+    <?php foreach ($formats[$t['id']] ?? [] as $f): ?> · <?= lang('Site.fmt_' . $f['format']) ?> <?= esc(money((int) $f['price_minor'], $region['currency'])) ?><?php endforeach; ?>
     · <a href="/templates/<?= esc($t['slug'], 'url') ?>"><?= lang('Site.preview') ?></a>
   </div>
 <?php endforeach; ?>
