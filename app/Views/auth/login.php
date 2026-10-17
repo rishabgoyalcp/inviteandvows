@@ -8,4 +8,5 @@
   <div><input type="password" name="password" placeholder="<?= lang('Site.password') ?>" required></div>
   <button type="submit"><?= lang('Site.login') ?></button>
 </form>
+<p><a href="/forgot"><?= lang('Site.forgot') ?></a></p>
 <?= $this->endSection() ?>

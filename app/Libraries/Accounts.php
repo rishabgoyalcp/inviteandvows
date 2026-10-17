@@ -17,6 +17,9 @@ class Accounts
         $db   = db_connect();
         $user = $db->table('users')->where('email', $email)->get()->getRowArray();
         if ($user) {
+            if (! service('throttler')->check('login-' . md5(service('request')->getIPAddress() . $email), 8, 5 * MINUTE)) {
+                return 'Site.tooMany';
+            }
             if (! $user['is_active'] || ! $user['password_hash'] || ! password_verify($pass, $user['password_hash'])) {
                 return 'Site.invalidLogin';
             }

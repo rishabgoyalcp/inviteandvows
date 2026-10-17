@@ -64,6 +64,6 @@ button{background:#8a2850;color:#fff;border:0;border-radius:6px;cursor:pointer}
 <main>
 <?php if ($e = session()->getFlashdata('error')): ?><p class="err"><?= esc($e) ?></p><?php endif; ?>
 <?= $this->renderSection('content') ?></main>
-<footer><small>&copy; <?= date('Y') ?> Invite &amp; Vows</small></footer>
+<footer><small>&copy; <?= date('Y') ?> Invite &amp; Vows · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/refunds">Refunds</a> · <a href="/contact">Contact</a></small></footer>
 </body>
 </html>

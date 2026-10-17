@@ -23,6 +23,15 @@ $routes->get('robots.txt', 'Seo::robots');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attempt');
 $routes->get('logout', 'Auth::logout');
+$routes->get('forgot', 'Auth::forgot');
+$routes->post('forgot', 'Auth::sendReset');
+$routes->get('reset/(:alphanum)', 'Auth::reset/$1');
+$routes->post('reset/(:alphanum)', 'Auth::doReset/$1');
+
+// Legal pages (Razorpay and most gateways require them before going live)
+foreach (['privacy', 'terms', 'refunds', 'contact'] as $page) {
+    $routes->get($page, 'Pages::show/' . $page);
+}
 
 // Public catalogue and builder (guests can build before signing up)
 $routes->get('templates', 'Templates::index');
