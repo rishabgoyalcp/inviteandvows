@@ -50,7 +50,7 @@ Pricing is stored per template and per format. Example: Template #12 costs ₹1,
 
 ## 5. Technical architecture
 
-**Stack:** CodeIgniter 4 (PHP 8.1+), MySQL/MariaDB, Hostinger hosting, Razorpay payments. Frontend: server-rendered views, Tailwind (compiled in CI, committed as a CSS file), and Alpine.js or vanilla JS for the builder.
+**Stack:** CodeIgniter 4 (PHP 8.2+), MySQL/MariaDB, Hostinger hosting, Razorpay payments. Frontend: server-rendered views, Tailwind (compiled in CI, committed as a CSS file), and Alpine.js or vanilla JS for the builder.
 
 **Why this works on Hostinger:** no Node server is needed in production. The builder is JavaScript running in the browser, and invite pages are rendered by PHP from stored JSON.
 
@@ -125,5 +125,5 @@ Pricing is stored per template and per format. Example: Template #12 costs ₹1,
 ## 10. Open items
 
 - Razorpay: the domain inviteandvows.in must be added to the Razorpay account (and the website details submitted if Razorpay asks).
-- Hostinger: PHP version (8.1 or newer) and Git deployment need to be checked on the account.
+- Hostinger: PHP version (8.2 or newer) and Git deployment need to be checked on the account.
 - Template designs, brand colours and logo come later, as agreed.
