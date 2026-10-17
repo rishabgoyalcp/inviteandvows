@@ -27,12 +27,17 @@ button{background:#8a2850;color:#fff;border:0;border-radius:6px;cursor:pointer}
     <?php foreach ($languages as $code => $l): ?>
       <a href="?lang=<?= esc($code, 'url') ?>"><?= esc($l['native']) ?></a>
     <?php endforeach; ?>
+    · <a href="/templates"><?= lang('Site.templates') ?></a>
     <?php if (session()->get('user_id')): ?>
-      · <a href="/admin"><?= lang('Site.admin') ?></a> · <a href="/logout"><?= lang('Site.logout') ?></a>
-    <?php endif; ?>
+      · <a href="/dashboard"><?= lang('Site.myInvites') ?></a>
+      <?php if (session()->get('user_role') === 'admin'): ?> · <a href="/admin"><?= lang('Site.admin') ?></a><?php endif; ?>
+      · <a href="/logout"><?= lang('Site.logout') ?></a>
+    <?php else: ?> · <a href="/login"><?= lang('Site.login') ?></a><?php endif; ?>
   </nav>
 </header>
-<main><?= $this->renderSection('content') ?></main>
+<main>
+<?php if ($e = session()->getFlashdata('error')): ?><p class="err"><?= esc($e) ?></p><?php endif; ?>
+<?= $this->renderSection('content') ?></main>
 <footer><small>&copy; <?= date('Y') ?> Invite &amp; Vows</small></footer>
 </body>
 </html>
