@@ -43,7 +43,7 @@ class Region
         $list = [];
         try {
             $rows = \Config\Database::connect()->table('region_languages rl')
-                ->select('l.code, l.name, l.native, l.is_rtl')
+                ->select('l.code, l.name, l.native, l.is_rtl, l.font_family')
                 ->join('languages l', 'l.id = rl.language_id')
                 ->where('rl.region_id', $region['id'])->where('l.is_active', 1)
                 ->orderBy('rl.sort')->get()->getResultArray();
@@ -53,7 +53,7 @@ class Region
         } catch (\Throwable) {
         }
         if (! $list) {
-            $list['en'] = ['code' => 'en', 'name' => 'English', 'native' => 'English', 'is_rtl' => 0];
+            $list['en'] = ['code' => 'en', 'name' => 'English', 'native' => 'English', 'is_rtl' => 0, 'font_family' => 'Noto Sans'];
         }
 
         return self::$languages[$region['id']] = $list;

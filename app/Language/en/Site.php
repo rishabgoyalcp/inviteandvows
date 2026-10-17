@@ -50,4 +50,7 @@ return [
     'canvaNote' => 'After payment you get a link to edit this design in Canva. You need a free Canva account.',
     'myPurchases' => 'My purchases',
     'openCanva' => 'Open in Canva',
+    'descHome' => 'Create beautiful digital wedding, birthday and baby shower invitations and share them with RSVP.',
+    'descTemplates' => 'Browse invitation templates for weddings, birthdays, baby showers and more.',
+    'language' => 'Language',
 ];

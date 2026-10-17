@@ -1,4 +1,4 @@
-<?php $rtl = ! empty(\App\Libraries\Region::languages()[service('request')->getLocale()]['is_rtl']); ?>
+<?php $cur = \App\Libraries\Region::languages()[service('request')->getLocale()] ?? []; $rtl = ! empty($cur['is_rtl']); ?>
 <!doctype html>
 <html lang="<?= esc(service('request')->getLocale()) ?>" dir="<?= $rtl ? 'rtl' : 'ltr' ?>">
 <head>
@@ -10,7 +10,8 @@
 <meta property="og:url" content="<?= esc($url, 'attr') ?>">
 <?php if ($image): ?><meta property="og:image" content="<?= esc($image, 'attr') ?>"><?php endif; ?>
 <meta name="robots" content="noindex">
-<style>body{margin:0;background:#f3ece4;font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif}
+<?= font_link($cur['font_family'] ?? null) ?>
+<style>:root{--font:"<?= esc($cur['font_family'] ?? 'Noto Sans', 'css') ?>",system-ui,sans-serif}body{margin:0;background:#f3ece4;font-family:var(--font)}
 .rsvp{max-width:560px;margin:16px auto;padding:16px;background:#fff;border-radius:10px;box-sizing:border-box}
 input,select,textarea,button{font:inherit;padding:8px;margin:4px 0;width:100%;box-sizing:border-box}
 button{background:#8a2850;color:#fff;border:0;border-radius:6px}.hp{position:absolute;left:-9999px}.err{color:#b00020}</style>

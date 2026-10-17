@@ -34,6 +34,25 @@ class Catalog extends BaseController
         return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($s)), '-');
     }
 
+    // ---- languages: switch a reviewed translation on or off ----
+    public function languages()
+    {
+        return view('admin/languages', ['rows' => db_connect()->table('languages')->orderBy('id')->get()->getResultArray()]);
+    }
+
+    public function saveLanguages()
+    {
+        $db     = db_connect();
+        $active = (array) $this->request->getPost('active');
+        foreach ($db->table('languages')->get()->getResultArray() as $l) {
+            // English is the fallback for every missing string, so it can never be switched off.
+            $on = $l['code'] === 'en' || isset($active[$l['code']]) ? 1 : 0;
+            $db->table('languages')->where('id', $l['id'])->update(['is_active' => $on, 'updated_at' => date('Y-m-d H:i:s')]);
+        }
+
+        return redirect()->to('/admin/languages');
+    }
+
     // ---- event types ----
     public function eventTypes()
     {

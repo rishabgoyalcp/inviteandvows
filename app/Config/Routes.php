@@ -5,6 +5,15 @@ use CodeIgniter\Router\RouteCollection;
 /** @var RouteCollection $routes */
 $routes->get('/', 'Home::index');
 
+// Language-prefixed pages for search engines: /hi, /hi/templates, /hi/templates/classic-wedding
+foreach (config(\Config\App::class)->supportedLocales as $code) {
+    $routes->get($code, 'Home::index');
+    $routes->get($code . '/templates', 'Templates::index');
+    $routes->get($code . '/templates/(:segment)', 'Templates::show/$1');
+}
+$routes->get('sitemap.xml', 'Seo::sitemap');
+$routes->get('robots.txt', 'Seo::robots');
+
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attempt');
 $routes->get('logout', 'Auth::logout');
@@ -52,6 +61,8 @@ $routes->group('admin', ['filter' => 'adminauth', 'namespace' => 'App\Controller
     $routes->get('event-types/(:num)/fields', 'Catalog::fields/$1');
     $routes->post('event-types/(:num)/fields', 'Catalog::saveField/$1');
     $routes->post('event-types/(:num)/fields/(:num)/delete', 'Catalog::deleteField/$1/$2');
+    $routes->get('languages', 'Catalog::languages');
+    $routes->post('languages', 'Catalog::saveLanguages');
     $routes->get('templates', 'Catalog::templates');
     $routes->post('templates', 'Catalog::saveTemplate');
 });

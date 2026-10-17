@@ -16,6 +16,18 @@ class RegionLocale implements FilterInterface
         $languages = Region::languages();
         $session   = service('session');
 
+        // /hi/templates style URLs: the first segment names the language. Only languages this region offers are valid.
+        $first = $request->getUri()->getSegment(1);
+        if (in_array($first, config(\Config\App::class)->supportedLocales, true)) {
+            if (! isset($languages[$first])) {
+                throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+            }
+            $request->setLocale($first);
+            $session->set('locale', $first);
+
+            return;
+        }
+
         $requested = $request->getGet('lang');
         if (is_string($requested) && isset($languages[$requested])) {
             $session->set('locale', $requested);

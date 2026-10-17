@@ -7,7 +7,7 @@ foreach ($fields as $f) {
     }
 }
 ?>
-<div style="max-width:560px;margin:0 auto;padding:32px 20px;text-align:center;font-family:Georgia,'Noto Serif','Noto Serif Devanagari',serif;color:#3b2a2a;background:#fffaf2;border:1px solid #e8d9c5">
+<div style="max-width:560px;margin:0 auto;padding:32px 20px;text-align:center;font-family:var(--font,Georgia,serif);color:#3b2a2a;background:#fffaf2;border:1px solid #e8d9c5">
   <?php if ($img): ?><img src="<?= esc(base_url($img)) ?>" alt="" style="max-width:100%;border-radius:8px;margin-bottom:16px"><?php endif; ?>
   <?php foreach ($fields as $f):
       $v = $content[$f['field_key']] ?? '';

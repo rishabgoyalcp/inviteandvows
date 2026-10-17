@@ -45,6 +45,8 @@ class Templates extends BaseController
         $templates = $q->get()->getResultArray();
 
         return view('templates/index', [
+            'title'      => lang('Site.templates') . ' · ' . lang('Site.brand'),
+            'description' => lang('Site.descTemplates'),
             'region'     => Region::current(),
             'templates'  => $templates,
             'formats'    => $this->formatsFor(array_column($templates, 'id')),
@@ -71,6 +73,15 @@ class Templates extends BaseController
             };
         }
 
-        return view('templates/show', ['t' => $t, 'region' => Region::current(), 'fields' => $fields, 'content' => $content, 'formats' => $this->formatsFor([(int) $t['id']])[$t['id']] ?? []]);
+        $formats = $this->formatsFor([(int) $t['id']])[$t['id']] ?? [];
+        $web     = $formats['website'] ?? reset($formats);
+        $name    = i18n($t['names'], $t['slug']);
+        $jsonld  = $web ? [
+            '@context' => 'https://schema.org', '@type' => 'Product', 'name' => $name,
+            'description' => $name . ' · ' . i18n($t['event_names'], $t['event_slug']),
+            'offers' => ['@type' => 'Offer', 'price' => number_format($web['price_minor'] / 100, 2, '.', ''), 'priceCurrency' => Region::current()['currency'], 'availability' => 'https://schema.org/InStock'],
+        ] : null;
+
+        return view('templates/show', ['title' => $name . ' · ' . lang('Site.brand'), 'description' => $name . ' · ' . i18n($t['event_names'], $t['event_slug']) . '. ' . lang('Site.descTemplates'), 'jsonld' => $jsonld, 't' => $t, 'region' => Region::current(), 'fields' => $fields, 'content' => $content, 'formats' => $formats]);
     }
 }
