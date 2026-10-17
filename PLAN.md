@@ -1,6 +1,6 @@
 # Invite & Vows: Product and Technical Plan (DRAFT v1)
 
-Status: for discussion. Nothing is built yet.
+Status: plan agreed in principle (v2). Nothing is built yet. Next step: Phase 0 scaffold.
 
 ## 1. What we are building
 
@@ -112,11 +112,18 @@ Pricing is stored per template and per format. Example: Template #12 costs ₹1,
 - Razorpay account keys (test mode first), Hostinger access or a deploy method, and DNS control for the three domains.
 - Brand colours, logo, and the exact event types you want at launch.
 
-## 9. Open questions
+## 9. Decisions (confirmed with owner)
 
-1. **Canva PDF:** is "Editable Canva PDF" a Canva link to an editable print design (A5 or A4), or an actual PDF with fillable fields? I assumed a Canva link.
-2. **Video invites:** are you happy to start with website invites and add video in Phase 4, or is video needed at launch?
-3. **Hostinger plan:** which plan do you have (shared, cloud or VPS)? It decides what we can run.
-4. **Accounts:** do customers need to register, or can they build first and sign up at checkout? I recommend the second.
-5. **Launch order:** should we launch .in first and add .com later? I recommend this.
-6. **Which languages first:** should we launch with English and Hindi and add the rest one at a time?
+1. **Canva products** are delivered as a Canva "use this template" link after payment. The PDF version is also a Canva link.
+2. **Video invites** come in Phase 4, after website invites. Launch is not blocked on video.
+3. **Hosting** starts on Hostinger **shared hosting**. A VPS is added later (needed for video rendering).
+4. **Payments:** Razorpay, with an approved account, to be connected to this site. Stripe can be added later for the global site through the payment-provider interface.
+5. **Launch order:** inviteandvows.in first, then inviteandvows.com.
+6. **Accounts:** customers build first and sign up at checkout.
+7. **Languages:** launch with English and Hindi, then add the others one at a time.
+
+## 10. Open items
+
+- Razorpay: the domain inviteandvows.in must be added to the Razorpay account (and the website details submitted if Razorpay asks).
+- Hostinger: PHP version (8.1 or newer) and Git deployment need to be checked on the account.
+- Template designs, brand colours and logo come later, as agreed.
