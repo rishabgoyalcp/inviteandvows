@@ -85,6 +85,12 @@ $routes->group('admin', ['filter' => 'adminauth', 'namespace' => 'App\Controller
     $routes->get('event-types/(:num)/fields', 'Catalog::fields/$1');
     $routes->post('event-types/(:num)/fields', 'Catalog::saveField/$1');
     $routes->post('event-types/(:num)/fields/(:num)/delete', 'Catalog::deleteField/$1/$2');
+    $routes->get('updates', 'Updates::index');
+    $routes->post('updates', 'Updates::upload');
+    $routes->post('updates/backup', 'Updates::backup');
+    $routes->get('updates/download/(:segment)', 'Updates::download/$1');
+    $routes->post('updates/restore', 'Updates::restore');
+    $routes->post('updates/delete', 'Updates::deleteBackup');
     $routes->get('coupons', 'Growth::coupons');
     $routes->post('coupons', 'Growth::saveCoupon');
     $routes->get('blog', 'Growth::blog');

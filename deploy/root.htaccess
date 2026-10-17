@@ -1,0 +1,12 @@
+# Use this ONLY if your host serves the project folder itself and you cannot point the domain at the public/ folder.
+# Copy it to the project root as .htaccess. (Better: set the document root to .../public in hPanel and skip this file.)
+Options -Indexes
+
+# Never serve source, config, logs, backups or the signing material
+RewriteEngine On
+RewriteRule ^(app|writable|vendor|tests|tools|deploy|builds|dist)(/|$) - [F,L]
+RewriteRule ^(\.env|\.env\..*|composer\.(json|lock)|spark|VERSION|release\.key|phpunit\.dist\.xml|preload\.php)$ - [F,L]
+
+# Everything else is served from public/
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]

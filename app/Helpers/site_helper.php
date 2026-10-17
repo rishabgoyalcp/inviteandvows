@@ -114,3 +114,11 @@ function blog_html(string $text): string
 
     return $out;
 }
+
+/** Installed release, from the VERSION file in the project root. */
+function app_version(): string
+{
+    $v = is_file(ROOTPATH . 'VERSION') ? trim((string) file_get_contents(ROOTPATH . 'VERSION')) : '0.0.0';
+
+    return preg_match('/^\d+\.\d+\.\d+$/', $v) ? $v : '0.0.0';
+}

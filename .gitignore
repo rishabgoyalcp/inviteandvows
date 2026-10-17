@@ -139,3 +139,12 @@ public/videos/*
 # Designer uploads
 public/uploads/templates/*
 !public/uploads/templates/.gitkeep
+
+# Release signing key and built packages
+/release.key
+/dist/
+
+# Backups hold database dumps: never commit
+/writable/backups/
+/writable/updates/
+/writable/maintenance.flag

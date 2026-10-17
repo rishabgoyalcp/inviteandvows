@@ -14,6 +14,7 @@ use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\AdminAuth;
 use App\Filters\LoginRequired;
+use App\Filters\Maintenance;
 use App\Filters\RegionLocale;
 
 class Filters extends BaseFilters
@@ -39,6 +40,7 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         'adminauth'     => AdminAuth::class,
         'login'         => LoginRequired::class,
+        'maintenance'   => Maintenance::class,
         'regionlocale'  => RegionLocale::class,
     ];
 
@@ -78,6 +80,7 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
+            'maintenance',
             'regionlocale',
             // 'honeypot',
             'csrf' => ['except' => ['webhooks/*']],
