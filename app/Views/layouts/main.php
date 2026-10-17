@@ -6,7 +6,7 @@ $rtl       = ! empty($cur['is_rtl']);
 $segs      = service('request')->getUri()->getSegments();
 if ($segs && isset($languages[$segs[0]])) { array_shift($segs); }
 $path      = implode('/', $segs);
-$seoPage   = $path === '' || $path === 'templates' || str_starts_with($path, 'templates/');
+$seoPage   = $path === '' || in_array($path, ['templates', 'blog', 'tools/budget'], true) || str_starts_with($path, 'templates/') || str_starts_with($path, 'blog/');
 $title     = $title ?? lang('Site.brand');
 $description = $description ?? lang('Site.descHome');
 ?>
@@ -19,9 +19,10 @@ $description = $description ?? lang('Site.descHome');
 <meta name="description" content="<?= esc($description, 'attr') ?>">
 <?php if ($seoPage): ?>
 <link rel="canonical" href="<?= esc(lang_url($locale, $path), 'attr') ?>">
-<?php foreach ($languages as $code => $l): ?><link rel="alternate" hreflang="<?= esc($code, 'attr') ?>" href="<?= esc(lang_url($code, $path), 'attr') ?>">
+<?php if (empty($noAlternates)): foreach ($languages as $code => $l): ?><link rel="alternate" hreflang="<?= esc($code, 'attr') ?>" href="<?= esc(lang_url($code, $path), 'attr') ?>">
 <?php endforeach; ?>
 <link rel="alternate" hreflang="x-default" href="<?= esc(lang_url(array_key_first($languages), $path), 'attr') ?>">
+<?php endif; ?>
 <meta property="og:title" content="<?= esc($title, 'attr') ?>">
 <meta property="og:description" content="<?= esc($description, 'attr') ?>">
 <meta property="og:url" content="<?= esc(lang_url($locale, $path), 'attr') ?>">
@@ -45,7 +46,7 @@ button{background:#8a2850;color:#fff;border:0;border-radius:6px;cursor:pointer}
 <header>
   <strong><a href="<?= esc(lang_url($locale, ''), 'attr') ?>" style="text-decoration:none"><?= lang('Site.brand') ?></a></strong>
   <nav>
-    <a href="<?= esc(lang_url($locale, 'templates'), 'attr') ?>"><?= lang('Site.templates') ?></a>
+    <a href="<?= esc(lang_url($locale, 'templates'), 'attr') ?>"><?= lang('Site.templates') ?></a> · <a href="<?= esc(lang_url($locale, 'blog'), 'attr') ?>"><?= lang('Site.blog') ?></a> · <a href="<?= esc(lang_url($locale, 'tools/budget'), 'attr') ?>"><?= lang('Site.budgetTitle') ?></a>
     <?php if (session()->get('user_id')): ?>
       · <a href="/dashboard"><?= lang('Site.myInvites') ?></a>
       <?php if (session()->get('user_role') === 'admin'): ?> · <a href="/admin"><?= lang('Site.admin') ?></a><?php endif; ?>
@@ -54,7 +55,7 @@ button{background:#8a2850;color:#fff;border:0;border-radius:6px;cursor:pointer}
     <?php if (count($languages) > 1): ?>
       · <select aria-label="<?= lang('Site.language') ?>" onchange="location.href=this.value">
         <?php foreach ($languages as $code => $l): ?>
-          <option value="<?= esc(lang_url($code, $path), 'attr') ?>" <?= $code === $locale ? 'selected' : '' ?>><?= esc($l['native']) ?></option>
+          <option value="<?= esc(lang_url($code, str_starts_with($path, 'blog/') ? 'blog' : $path), 'attr') ?>" <?= $code === $locale ? 'selected' : '' ?>><?= esc($l['native']) ?></option>
         <?php endforeach; ?>
       </select>
     <?php endif; ?>

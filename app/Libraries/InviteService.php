@@ -33,6 +33,7 @@ class InviteService
         $db->transComplete();
 
         if ($newlyPaid && $db->transStatus()) {
+            Referrals::onPaid($order);
             OrderMailer::paid($orderId);
         }
     }

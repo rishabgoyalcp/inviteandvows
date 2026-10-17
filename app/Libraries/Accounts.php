@@ -24,6 +24,7 @@ class Accounts
             $now = date('Y-m-d H:i:s');
             $db->table('users')->insert(['name' => mb_substr($name ?: $email, 0, 120), 'email' => $email, 'password_hash' => password_hash($pass, PASSWORD_DEFAULT), 'role' => 'customer', 'is_active' => 1, 'created_at' => $now, 'updated_at' => $now]);
             $user = $db->table('users')->where('id', $db->insertID())->get()->getRowArray();
+            Referrals::onSignup((int) $user['id']);
         }
         $drafts = (array) session()->get('drafts');
         session()->regenerate();

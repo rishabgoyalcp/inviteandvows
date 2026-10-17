@@ -36,11 +36,30 @@ class Invite extends BaseController
             ?: ($content['person_name'] ?? $content['parents_names'] ?? i18n($inv['template_names'], 'Invitation'));
         $image = ! empty($content['cover_photo']) ? base_url($content['cover_photo']) : '';
 
+        $guest = null;
+        $g     = (string) $this->request->getGet('g');
+        if (preg_match('/^[a-f0-9]{16}$/', $g)) {
+            $guest = db_connect()->table('guests')->where(['token' => $g, 'invite_id' => $inv['id']])->get()->getRowArray();
+            if ($guest && ! $guest['opened_at']) {
+                db_connect()->table('guests')->where('id', $guest['id'])->update(['opened_at' => date('Y-m-d H:i:s')]);
+            }
+        }
+
         return view('invite/show', [
+            'guest' => $guest,
             'inv' => $inv, 'fields' => $fields, 'content' => $content, 'title' => $title, 'image' => $image,
             'video' => ($inv['format'] ?? '') === 'video' ? $this->videoFile((int) $inv['id']) : null,
             'url' => invite_url($code), 'sent' => (bool) session()->getFlashdata('rsvp_ok'),
         ]);
+    }
+
+    /** Links an RSVP to its guest only when the token belongs to this invite. */
+    private function guestId(int $inviteId): ?int
+    {
+        $g = (string) $this->request->getPost('g');
+        $row = preg_match('/^[a-f0-9]{16}$/', $g) ? db_connect()->table('guests')->where(['token' => $g, 'invite_id' => $inviteId])->get()->getRowArray() : null;
+
+        return $row ? (int) $row['id'] : null;
     }
 
     public function rsvp(string $code)
@@ -61,7 +80,7 @@ class Invite extends BaseController
         $now = date('Y-m-d H:i:s');
         db_connect()->table('rsvps')->insert([
             'invite_id' => $inv['id'], 'guest_name' => mb_substr($name, 0, 120), 'contact' => mb_substr(trim((string) $this->request->getPost('contact')), 0, 120),
-            'status' => $status, 'guests' => max(1, min(20, (int) $this->request->getPost('guests'))),
+            'status' => $status, 'guests' => max(1, min(20, (int) $this->request->getPost('guests'))), 'guest_id' => $this->guestId((int) $inv['id']),
             'message' => mb_substr(trim((string) $this->request->getPost('message')), 0, 1000), 'created_at' => $now, 'updated_at' => $now,
         ]);
 

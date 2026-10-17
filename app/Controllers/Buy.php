@@ -3,7 +3,9 @@
 namespace App\Controllers;
 
 use App\Libraries\Accounts;
+use App\Libraries\Coupons;
 use App\Libraries\InviteService;
+use App\Libraries\OrderService;
 use App\Libraries\Payments\Payments;
 use App\Libraries\Region;
 use CodeIgniter\Exceptions\PageNotFoundException;
@@ -37,7 +39,7 @@ class Buy extends BaseController
             return redirect()->to('/dashboard')->with('ok', lang('Site.alreadyOwned'));
         }
 
-        return view('buy/confirm', ['tf' => $tf, 'amount' => money((int) $tf['price_minor'], Region::current()['currency'])]);
+        return view('buy/confirm', ['tf' => $tf, 'amount' => money((int) $tf['price_minor'], Region::current()['currency']), 'coupon' => Coupons::availableFor((int) session()->get('user_id'))[0]['code'] ?? '', 'error' => session()->getFlashdata('error')]);
     }
 
     public function account(int $id)
@@ -52,40 +54,16 @@ class Buy extends BaseController
     {
         $tf     = $this->format($id);
         $region = Region::current();
-        $driver = Payments::for($region['payment_driver']);
-        $db     = db_connect();
-        $now    = date('Y-m-d H:i:s');
-        $uid    = (int) session()->get('user_id');
-
-        $db->table('orders')->insert([
-            'user_id' => $uid, 'invite_id' => null, 'template_format_id' => $tf['id'], 'currency' => $region['currency'],
-            'amount_minor' => $tf['price_minor'], 'status' => 'pending', 'created_at' => $now, 'updated_at' => $now,
-        ]);
-        $orderId = (int) $db->insertID();
-        $pay     = ['order_id' => $orderId, 'driver' => $driver->name(), 'status' => 'created', 'created_at' => $now, 'updated_at' => $now];
-        $amount  = money((int) $tf['price_minor'], $region['currency']);
-
-        if ($driver->name() === 'razorpay' && ! $driver->isConfigured()) {
-            if (ENVIRONMENT !== 'development') {
-                throw new \RuntimeException('Payment gateway is not configured.');
-            }
-            $ref = 'sim_' . bin2hex(random_bytes(6));
-            $db->table('payments')->insert($pay + ['provider_ref' => $ref]);
-
-            return view('checkout/simulate', ['action' => '/buy/order/' . $orderId . '/simulate', 'ref' => $ref, 'amount' => $amount]);
+        $res    = OrderService::create((int) session()->get('user_id'), null, $tf, (string) $this->request->getPost('coupon'), $region['currency']);
+        if (isset($res['error'])) {
+            return redirect()->to('/buy/' . $id)->with('error', lang($res['error']));
         }
-        try {
-            $data = $driver->createOrder((int) $tf['price_minor'], $region['currency'], 'buy' . $orderId);
-        } catch (\Throwable $e) {
-            log_message('error', $e->getMessage());
-            $db->table('orders')->where('id', $orderId)->update(['status' => 'failed']);
-
-            return redirect()->to('/buy/' . $id)->with('error', lang('Site.paymentUnavailable'));
+        $out = OrderService::pay($res['order_id'], $res['amount'], $region['currency'], $region['payment_driver'], 'buy' . $res['order_id'], '/buy/order/' . $res['order_id'] . '/verify', '/buy/order/' . $res['order_id'] . '/simulate');
+        if (isset($out['error'])) {
+            return redirect()->to('/buy/' . $id)->with('error', lang($out['error']));
         }
-        $db->table('payments')->insert($pay + ['provider_ref' => $data['provider_ref']]);
-        $user = $db->table('users')->where('id', $uid)->get()->getRowArray();
 
-        return view('checkout/razorpay', ['action' => '/buy/order/' . $orderId . '/verify', 'data' => $data, 'user' => $user, 'amount' => $amount]);
+        return isset($out['free']) ? redirect()->to('/dashboard')->with('ok', lang('Site.purchased')) : view($out['view'], $out['data']);
     }
 
     private function ownOrderPayment(int $orderId, string $ref): array

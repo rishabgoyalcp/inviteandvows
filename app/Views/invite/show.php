@@ -25,9 +25,10 @@ button{background:#8a2850;color:#fff;border:0;border-radius:6px}.hp{position:abs
 <form class="rsvp" method="post" action="/i/<?= esc($inv['short_code'], 'attr') ?>/rsvp">
   <?= csrf_field() ?>
   <h2><?= lang('Site.rsvp') ?></h2>
+  <?php if ($guest): ?><p><?= lang('Site.dear', [esc($guest['name'])]) ?></p><input type="hidden" name="g" value="<?= esc($guest['token'], 'attr') ?>"><?php endif; ?>
   <?php if ($sent): ?><p><strong><?= lang('Site.rsvpThanks') ?></strong></p><?php endif; ?>
   <?php if ($e = session()->getFlashdata('error')): ?><p class="err"><?= esc($e) ?></p><?php endif; ?>
-  <input name="guest_name" placeholder="<?= lang('Site.name') ?>" required>
+  <input name="guest_name" value="<?= esc($guest['name'] ?? '', 'attr') ?>" placeholder="<?= lang('Site.name') ?>" required>
   <input name="contact" placeholder="<?= lang('Site.contact') ?>">
   <select name="status"><option value="yes"><?= lang('Site.attending') ?></option><option value="maybe"><?= lang('Site.maybe') ?></option><option value="no"><?= lang('Site.notAttending') ?></option></select>
   <input type="number" name="guests" min="1" max="20" value="1" aria-label="<?= lang('Site.guests') ?>">

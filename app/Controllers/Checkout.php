@@ -2,7 +2,9 @@
 
 namespace App\Controllers;
 
+use App\Libraries\Coupons;
 use App\Libraries\InviteService;
+use App\Libraries\OrderService;
 use App\Libraries\Payments\Payments;
 use App\Libraries\Region;
 use CodeIgniter\Exceptions\PageNotFoundException;
@@ -64,40 +66,33 @@ class Checkout extends BaseController
         if (! $inv['user_id']) {
             db_connect()->table('invites')->where('id', $inv['id'])->update(['user_id' => session()->get('user_id')]);
         }
-        $driver = Payments::for($region['payment_driver']);
-        $db     = db_connect();
-        $now    = date('Y-m-d H:i:s');
+        $mine = Coupons::availableFor((int) session()->get('user_id'));
 
-        $db->table('orders')->insert([
-            'user_id' => session()->get('user_id'), 'invite_id' => $inv['id'], 'template_format_id' => $tf['id'],
-            'currency' => $region['currency'], 'amount_minor' => $tf['price_minor'], 'status' => 'pending', 'created_at' => $now, 'updated_at' => $now,
+        return view('checkout/summary', [
+            'action' => '/checkout/' . $token . '/pay', 'name' => i18n(db_connect()->table('templates')->where('id', $inv['template_id'])->get()->getRow('names'), ''),
+            'price' => money((int) $tf['price_minor'], $region['currency']), 'coupon' => $mine[0]['code'] ?? '', 'error' => session()->getFlashdata('error'),
         ]);
-        $orderId = (int) $db->insertID();
-        $pay     = ['order_id' => $orderId, 'driver' => $driver->name(), 'status' => 'created', 'created_at' => $now, 'updated_at' => $now];
+    }
 
-        if ($driver->name() === 'razorpay' && ! $driver->isConfigured()) {
-            // Razorpay keys missing: only allow a fake payment on a developer machine.
-            if (ENVIRONMENT !== 'development') {
-                throw new \RuntimeException('Payment gateway is not configured.');
-            }
-            $ref = 'sim_' . bin2hex(random_bytes(6));
-            $db->table('payments')->insert($pay + ['provider_ref' => $ref]);
-
-            return view('checkout/simulate', ['action' => '/checkout/' . $token . '/simulate', 'ref' => $ref, 'amount' => money((int) $tf['price_minor'], $region['currency'])]);
+    /** Creates the order (applying a coupon) and shows the payment page. */
+    public function pay(string $token)
+    {
+        $inv = $this->owned($token);
+        if ($inv['status'] === 'published' || ! session()->get('user_id') || $this->missingRequired($inv)) {
+            return redirect()->to('/checkout/' . $token);
+        }
+        $region = Region::current();
+        $uid    = (int) session()->get('user_id');
+        $res    = OrderService::create($uid, (int) $inv['id'], $this->format($inv), (string) $this->request->getPost('coupon'), $region['currency']);
+        if (isset($res['error'])) {
+            return redirect()->to('/checkout/' . $token)->with('error', lang($res['error']));
+        }
+        $out = OrderService::pay($res['order_id'], $res['amount'], $region['currency'], $region['payment_driver'], 'inv' . $inv['id'] . '-' . $res['order_id'], '/checkout/' . $token . '/verify', '/checkout/' . $token . '/simulate');
+        if (isset($out['error'])) {
+            return redirect()->to('/build/' . $token)->with('error', lang($out['error']));
         }
 
-        try {
-            $data = $driver->createOrder((int) $tf['price_minor'], $region['currency'], 'inv' . $inv['id'] . '-' . $orderId);
-        } catch (\Throwable $e) {
-            log_message('error', $e->getMessage());
-            $db->table('orders')->where('id', $orderId)->update(['status' => 'failed']);
-
-            return redirect()->to('/build/' . $token)->with('error', lang('Site.paymentUnavailable'));
-        }
-        $db->table('payments')->insert($pay + ['provider_ref' => $data['provider_ref']]);
-        $user = $db->table('users')->where('id', session()->get('user_id'))->get()->getRowArray();
-
-        return view('checkout/razorpay', ['action' => '/checkout/' . $token . '/verify', 'data' => $data, 'user' => $user, 'amount' => money((int) $tf['price_minor'], $region['currency'])]);
+        return isset($out['free']) ? redirect()->to('/dashboard')->with('ok', lang('Site.published')) : view($out['view'], $out['data']);
     }
 
     /** Sign in or create a customer account at checkout. */

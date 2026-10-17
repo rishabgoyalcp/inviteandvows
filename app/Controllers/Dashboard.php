@@ -17,7 +17,9 @@ class Dashboard extends BaseController
             ->where('o.user_id', session()->get('user_id'))->where('o.status', 'paid')->whereIn('tf.format', ['canva_design', 'canva_pdf'])
             ->orderBy('o.id', 'DESC')->get()->getResultArray();
 
-        return view('dashboard/index', ['invites' => $invites, 'purchases' => $purchases, 'ok' => session()->getFlashdata('ok')]);
+        $uid = (int) session()->get('user_id');
+
+        return view('dashboard/index', ['refLink' => site_url('r/' . \App\Libraries\Referrals::codeFor($uid)), 'coupons' => \App\Libraries\Coupons::availableFor($uid), 'invites' => $invites, 'purchases' => $purchases, 'ok' => session()->getFlashdata('ok')]);
     }
 
     /** Sends a paying customer to their Canva template. The link is never shown before payment. */

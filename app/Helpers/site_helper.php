@@ -62,7 +62,7 @@ function lang_url(string $code, ?string $path = null): string
         array_shift($segs);
     }
     $path = $path ?? implode('/', $segs);
-    $seo  = $path === '' || $path === 'templates' || str_starts_with($path, 'templates/');
+    $seo  = $path === '' || in_array($path, ['templates', 'blog', 'tools/budget'], true) || str_starts_with($path, 'templates/') || str_starts_with($path, 'blog/');
     if ($seo) {
         return site_url($code . ($path === '' ? '' : '/' . $path));
     }
@@ -93,4 +93,24 @@ function design_of(array $template): ?array
     $cfg = json_decode((string) ($template['config'] ?? $template['template_config'] ?? ''), true);
 
     return ! empty($cfg['design']['frames']) ? $cfg['design'] : null;
+}
+
+/**
+ * Safe HTML for blog bodies. Everything is escaped first; only paragraphs, ## headings, **bold**
+ * and [text](https://...) links are then turned into markup.
+ */
+function blog_html(string $text): string
+{
+    $out = '';
+    foreach (preg_split('/\R{2,}/', trim($text)) as $block) {
+        $e = esc(trim($block));
+        if ($e === '') {
+            continue;
+        }
+        $e = preg_replace('/\*\*(.+?)\*\*/su', '<strong>$1</strong>', $e);
+        $e = preg_replace_callback('/\[([^\]]+)\]\((https?:(?:&#x2F;|\/){2}[^)\s]+)\)/u', static fn ($m) => '<a href="' . $m[2] . '" rel="noopener nofollow">' . $m[1] . '</a>', $e);
+        $out .= preg_match('/^##\s+(.*)$/su', $e, $h) ? '<h2>' . $h[1] . '</h2>' : '<p>' . nl2br($e, false) . '</p>';
+    }
+
+    return $out;
 }

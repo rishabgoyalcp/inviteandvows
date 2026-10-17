@@ -19,6 +19,7 @@ class Seo extends BaseController
 
         $paths = [''];
         $paths[] = 'templates';
+        $paths[] = 'tools/budget';
         foreach ($tpls as $t) {
             $paths[] = 'templates/' . $t['slug'];
         }
@@ -30,6 +31,16 @@ class Seo extends BaseController
                     $xml .= '<xhtml:link rel="alternate" hreflang="' . $alt . '" href="' . htmlspecialchars($base . '/' . $alt . ($path === '' ? '' : '/' . $path), ENT_XML1) . '"/>';
                 }
                 $xml .= '</url>';
+            }
+        }
+
+        // Blog: the index in every language; each post only in the language it is written in.
+        foreach ($codes as $code) {
+            $xml .= '<url><loc>' . htmlspecialchars($base . '/' . $code . '/blog', ENT_XML1) . '</loc></url>';
+        }
+        foreach ($db->table('blog_posts')->select('locale, slug')->where('is_published', 1)->get()->getResultArray() as $p) {
+            if (in_array($p['locale'], $codes, true)) {
+                $xml .= '<url><loc>' . htmlspecialchars($base . '/' . $p['locale'] . '/blog/' . $p['slug'], ENT_XML1) . '</loc></url>';
             }
         }
 
