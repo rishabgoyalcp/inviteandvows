@@ -14,6 +14,11 @@
     <strong><?= esc(i18n($i['template_names'], '')) ?></strong> · <?= esc($i['status']) ?>
     <?php if ($i['status'] === 'published'): ?>
       <br><a href="<?= esc(invite_url($i['short_code']), 'attr') ?>"><?= esc(invite_url($i['short_code'])) ?></a>
+      <?php if ($i['format'] === 'video'): ?><br>
+        <?php if ($i['video_file']): ?><a href="<?= esc(base_url($i['video_file']), 'attr') ?>" download><?= lang('Site.downloadVideo') ?></a>
+        <?php elseif ($i['video_status'] === 'failed'): ?><?= lang('Site.videoFailed') ?>
+        <?php else: ?><?= lang('Site.videoPreparing') ?><?php endif; ?>
+      <?php endif; ?>
       <br><a href="/dashboard/invites/<?= (int) $i['id'] ?>/rsvps"><?= lang('Site.rsvp') ?> (<?= (int) $i['rsvp_count'] ?>)</a>
     <?php endif; ?>
     · <a href="/build/<?= esc($i['edit_token'], 'url') ?>"><?= lang('Site.edit') ?></a>

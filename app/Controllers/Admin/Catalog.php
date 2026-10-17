@@ -9,7 +9,7 @@ use CodeIgniter\Exceptions\PageNotFoundException;
 class Catalog extends BaseController
 {
     private const FIELD_TYPES = ['text', 'textarea', 'date', 'time', 'url', 'image'];
-    private const FORMATS     = ['website', 'canva_design', 'canva_pdf'];
+    private const FORMATS     = ['website', 'video', 'canva_design', 'canva_pdf'];
 
     private function langs(): array
     {
@@ -171,7 +171,7 @@ class Catalog extends BaseController
             foreach (self::FORMATS as $format) {
                 $amount = $byFormat[$format] ?? '';
                 $url    = trim((string) ($urls[$regionId][$format] ?? ''));
-                $isCanva = $format !== 'website';
+                $isCanva = str_starts_with($format, 'canva_');
                 $valid  = is_numeric($amount) && (! $isCanva || preg_match('#^https://(www\.canva\.com|canva\.link)/#', $url));
                 $where  = ['template_id' => $id, 'region_id' => (int) $regionId, 'format' => $format];
                 $exists = $db->table('template_formats')->where($where)->countAllResults() > 0;

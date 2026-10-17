@@ -20,7 +20,9 @@ class OrderMailer
             $product = i18n($o['template_names'], 'Invitation');
             $amount  = money((int) $o['amount_minor'], $o['currency']);
             $lines   = ["Hi {$o['user_name']},", '', "Thank you for your purchase: {$product} ({$o['format']}), {$amount}.", ''];
-            if ($o['format'] === 'website' && $o['short_code']) {
+            if ($o['format'] === 'video') {
+                $lines[] = 'Your video is being prepared. It usually takes a few minutes. You will find the download and share link here: ' . site_url('dashboard');
+            } elseif ($o['format'] === 'website' && $o['short_code']) {
                 $lines[] = 'Your invite is live: ' . invite_url($o['short_code']);
                 $lines[] = 'Manage it and see RSVPs: ' . site_url('dashboard');
             } else {

@@ -9,7 +9,7 @@ class Dashboard extends BaseController
     public function index()
     {
         $invites = db_connect()->table('invites i')
-            ->select('i.*, t.names AS template_names, (SELECT COUNT(*) FROM rsvps r WHERE r.invite_id = i.id) AS rsvp_count')
+            ->select('i.*, t.names AS template_names, (SELECT COUNT(*) FROM rsvps r WHERE r.invite_id = i.id) AS rsvp_count, (SELECT v.status FROM video_jobs v WHERE v.invite_id = i.id ORDER BY v.id DESC LIMIT 1) AS video_status, (SELECT v.file_path FROM video_jobs v WHERE v.invite_id = i.id AND v.status = \'done\' ORDER BY v.id DESC LIMIT 1) AS video_file')
             ->join('templates t', 't.id = i.template_id')->where('i.user_id', session()->get('user_id'))->orderBy('i.id', 'DESC')->get()->getResultArray();
 
         $purchases = db_connect()->table('orders o')->select('o.id, o.amount_minor, o.currency, o.created_at, tf.format, t.names AS template_names')

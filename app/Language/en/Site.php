@@ -53,4 +53,8 @@ return [
     'descHome' => 'Create beautiful digital wedding, birthday and baby shower invitations and share them with RSVP.',
     'descTemplates' => 'Browse invitation templates for weddings, birthdays, baby showers and more.',
     'language' => 'Language',
+    'fmt_video' => 'Video invite',
+    'downloadVideo' => 'Download video',
+    'videoPreparing' => 'Your video is being prepared. This usually takes a few minutes.',
+    'videoFailed' => 'We could not create your video. Our team has been notified.',
 ];

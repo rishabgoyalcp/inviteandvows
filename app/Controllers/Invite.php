@@ -18,6 +18,13 @@ class Invite extends BaseController
         return $inv;
     }
 
+    private function videoFile(int $inviteId): ?string
+    {
+        $row = db_connect()->table('video_jobs')->where(['invite_id' => $inviteId, 'status' => 'done'])->orderBy('id', 'DESC')->get(1)->getRowArray();
+
+        return $row ? base_url($row['file_path']) : null;
+    }
+
     public function show(string $code)
     {
         $inv = $this->published($code);
@@ -31,6 +38,7 @@ class Invite extends BaseController
 
         return view('invite/show', [
             'inv' => $inv, 'fields' => $fields, 'content' => $content, 'title' => $title, 'image' => $image,
+            'video' => ($inv['format'] ?? '') === 'video' ? $this->videoFile((int) $inv['id']) : null,
             'url' => invite_url($code), 'sent' => (bool) session()->getFlashdata('rsvp_ok'),
         ]);
     }

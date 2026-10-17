@@ -17,7 +17,7 @@ foreach (array_merge($rows, [['id' => 0, 'slug' => '', 'names' => '{}', 'view_fi
     <?php foreach ($regions as $g): ?><div><strong><?= esc($g['code']) ?> (<?= esc($g['currency']) ?>)</strong>
       <?php foreach ($formats as $fm): $cur = $price[$r['id']][$g['id']][$fm] ?? null; ?>
         <label><?= esc($fm) ?> <input type="number" step="0.01" min="0" name="price[<?= (int) $g['id'] ?>][<?= esc($fm, 'attr') ?>]" value="<?= esc($cur ? (string) ($cur['price_minor'] / 100) : '', 'attr') ?>" style="width:90px"></label>
-        <?php if ($fm !== 'website'): ?><input type="url" name="url[<?= (int) $g['id'] ?>][<?= esc($fm, 'attr') ?>]" value="<?= esc((string) ($cur['delivery_url'] ?? ''), 'attr') ?>" placeholder="Canva share link (https://www.canva.com/...)" style="width:260px"><?php endif; ?>
+        <?php if (str_starts_with($fm, 'canva_')): ?><input type="url" name="url[<?= (int) $g['id'] ?>][<?= esc($fm, 'attr') ?>]" value="<?= esc((string) ($cur['delivery_url'] ?? ''), 'attr') ?>" placeholder="Canva share link (https://www.canva.com/...)" style="width:260px"><?php endif; ?>
       <?php endforeach; ?></div><?php endforeach; ?>
     <label><input type="checkbox" name="is_active" value="1" <?= $r['is_active'] ? 'checked' : '' ?>> active</label>
     <button type="submit">Save</button>

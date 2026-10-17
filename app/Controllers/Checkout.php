@@ -38,7 +38,7 @@ class Checkout extends BaseController
 
     private function format(array $inv): array
     {
-        $tf = db_connect()->table('template_formats')->where(['template_id' => $inv['template_id'], 'region_id' => Region::current()['id'], 'format' => 'website', 'is_active' => 1])->get()->getRowArray();
+        $tf = db_connect()->table('template_formats')->where(['template_id' => $inv['template_id'], 'region_id' => Region::current()['id'], 'format' => $inv['format'] ?: 'website', 'is_active' => 1])->get()->getRowArray();
         if (! $tf) {
             throw PageNotFoundException::forPageNotFound();
         }

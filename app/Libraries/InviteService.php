@@ -26,6 +26,9 @@ class InviteService
                 } while ($db->table('invites')->where('short_code', $code)->countAllResults() > 0);
                 $db->table('invites')->where('id', $invite['id'])->update(['short_code' => $code, 'status' => 'published', 'updated_at' => $now]);
             }
+            if ($invite && ($invite['format'] ?? '') === 'video') {
+                \App\Libraries\Video\VideoQueue::enqueue((int) $invite['id']);
+            }
         }
         $db->transComplete();
 

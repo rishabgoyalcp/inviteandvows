@@ -25,9 +25,10 @@ class Builder extends BaseController
 
     public function start(string $slug)
     {
-        $db = db_connect();
-        $t  = $db->table('templates t')->select('t.id')
-            ->join('template_formats tf', "tf.template_id = t.id AND tf.format = 'website' AND tf.is_active = 1 AND tf.region_id = " . (int) Region::current()['id'])
+        $db     = db_connect();
+        $format = $this->request->getPost('format') === 'video' ? 'video' : 'website';
+        $t      = $db->table('templates t')->select('t.id')
+            ->join('template_formats tf', "tf.template_id = t.id AND tf.format = " . $db->escape($format) . " AND tf.is_active = 1 AND tf.region_id = " . (int) Region::current()['id'])
             ->where('t.slug', $slug)->where('t.is_active', 1)->get()->getRowArray();
         if (! $t) {
             throw PageNotFoundException::forPageNotFound();
@@ -36,7 +37,7 @@ class Builder extends BaseController
         $now   = date('Y-m-d H:i:s');
         $db->table('invites')->insert([
             'user_id' => session()->get('user_id') ?: null, 'template_id' => $t['id'], 'region_id' => Region::current()['id'],
-            'locale' => service('request')->getLocale(), 'content' => '{}', 'status' => 'draft', 'format' => 'website',
+            'locale' => service('request')->getLocale(), 'content' => '{}', 'status' => 'draft', 'format' => $format,
             'edit_token' => $token, 'created_at' => $now, 'updated_at' => $now,
         ]);
         $drafts   = (array) session()->get('drafts');

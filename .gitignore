@@ -131,3 +131,7 @@ writable/*.db
 # User-uploaded invite photos
 public/uploads/*
 !public/uploads/.gitkeep
+
+# Rendered video invites
+public/videos/*
+!public/videos/.gitkeep
